@@ -26,27 +26,20 @@ public class PcapUtil {
 	
 	public static final String[] DEST_WHITE_LIST = new String[]{"meimei", "renren"};
 	
+	private static final String PCAP_FILE = "/Users/caohe/Downloads/final.pcap";
+	
 	public static HashMap<String, byte[]> sDataMap = new HashMap<String, byte[]>();
 	private static String sCurrentKey = null;
 	
 	public static HashMap<String, byte[]> getData() {
 		
-		initDataMap();
-		
-//		Set<String> keySet = sDataMap.keySet();
-//		for (String key : keySet) {
-//			System.out.println("key :" + key);
-//			byte[] data = sDataMap.get(key);
-//			System.out.println("data : " + (data == null ? "null" : new String(data)));
-//		}
-		
+		initDataMap();		
 		return sDataMap;
 	}
 	
 	private static void initDataMap() {
-		System.out.println("=========");
 
-		File file = new File("/Users/caohe/Downloads/final.pcap");
+		File file = new File(PCAP_FILE);
 		try {
 			sCurrentKey = null;
 			checkPcap(file);
@@ -54,9 +47,7 @@ public class PcapUtil {
 			ArrayList<TcpPack> packs = processPcapPackage(sIn);
 			HashMap<String, HttpConn> dict = new HashMap<String, HttpConn>();
 			for (TcpPack pack : packs) {
-//				System.out.println(pack.source + ":" + pack.sourcePort + " --> " + pack.dest + ":" + pack.destPort);
 				String key = pack.genKey();
-//				System.out.println(key + " " + pack.pacType);
 				if (dict.containsKey(key)) {
 					dict.get(key).append(pack);
 					if (pack.pacType == -1) {
@@ -153,14 +144,12 @@ public class PcapUtil {
 		
 		
 		String stringContent = new String(data);
-//		System.out.println(" " + stringContent);
 		if (stringContent != null) {
 			int index = stringContent.indexOf(' ');
 			if (index < 0 || index > 10) {
 				return false;
 			}
 			String method = stringContent.substring(0, index);
-//			System.out.println("===" + method);
 			String[] valid = new String[]{"GET", "POST", "PUT", "DELETE"};
 			for (String v : valid) {
 				if (method.equalsIgnoreCase(v)) {
@@ -201,7 +190,6 @@ public class PcapUtil {
 		ByteArrayInputStream gzipInputStream = new ByteArrayInputStream(datas);
 		String string = unGzipBytesToString(gzipInputStream);
 		if (isValidString(string)) {
-//			System.out.println("==request==" + string);
 			return string.getBytes();
 		}
 		return datas;
@@ -215,19 +203,17 @@ public class PcapUtil {
 		}
 		for (int i = 0 ; i < min ; i ++) {
 			int chr = s.charAt(i);
-			if (chr <= 0 || chr >= 177 || chr == '?') {
+			if (chr <= 0 || chr >= 177 || chr == '?') {	//TODO
 				return false;
 			}
 			
 		}
 		return true;
-//		return s != null && !s.contains("?????");
 		
 	}
 	
 	private static byte[] readChunkedData(byte[] datas) {
 
-//		System.out.println("==read data1==" + new String(datas) + "end");
 		for (int i = 0 ; i < datas.length ; i ++) {
 			
 			if ((char) datas[i] == '\n') {
@@ -241,8 +227,6 @@ public class PcapUtil {
 				}
 			}
 		}
-		
-//		System.out.println("==read data==" + new String(datas) + "end");
 		
 		int start = 0;
 		int state = 0;
@@ -258,7 +242,6 @@ public class PcapUtil {
 						for (int j = start ; j <= i - 2 ; j ++) {
 							hexString += (char) datas[j];
 						}
-//						System.out.println("wtf" + new String(datas));
 						int length = Integer.parseInt(hexString.trim(), 16);
 						byte[] temp = new byte[length + (result == null ? 0 : result.length)];
 						if (result != null) {
@@ -273,7 +256,6 @@ public class PcapUtil {
 					}
 				}
 			}
-//			System.out.println("====" + ((char)datas[i]));
 		}
 		
 		return null;
@@ -304,7 +286,6 @@ public class PcapUtil {
 				System.arraycopy(body, 0, temp, 0, body.length);
 				System.arraycopy(packs.get(i).body, 0, temp, body.length, packs.get(i).body.length);
 				body = temp;
-//				System.out.println("||||" + new String(body));
 			}
 		}
 		
@@ -332,7 +313,6 @@ public class PcapUtil {
 				
 				if (line.toLowerCase().startsWith("content-length:")) {
 					contentLen = Integer.valueOf(getHeaderValue(line, "content-length:"));
-//					System.out.println("===" + contentLen);
 				} else if (line.toLowerCase().startsWith("transfer-encoding")) {
 					transferEncoding = getHeaderValue(line, "transfer-encoding:");
 					if (transferEncoding != null && transferEncoding.equals("chunked")) {
@@ -347,7 +327,6 @@ public class PcapUtil {
 					}
 				} else if (line.toLowerCase().startsWith("host")) {
 					host = getHeaderValue(line, "host:");
-//					System.out.println("host : " + host);
 					if (host != null) {
 						boolean in = false;
 						for (String s : DEST_WHITE_LIST) {
@@ -370,22 +349,19 @@ public class PcapUtil {
 			}
 		}
 
-//		System.out.println("request : " + host + " " + request);
-		//TODO gzip
-		
+
 		if (isChunked) {
 			System.out.println("========Chunked Not Supported Yet==========");	//TODO
 		} else {
-//			System.out.println("request content : " + content);
+
 			String content = new String(readData(body));
 			request = request.substring(request.indexOf(" ") + 1);
 			request = request.substring(0, request.indexOf(" "));
-//			String key = host + request;
+
 			String key = request;
-			if (content != null && content.length() > 0) {
+			if (content != null && content.trim().length() > 0) {
 				key += "?" + content;
 			}
-//			System.out.println(key);
 			sCurrentKey = key;
 		}
 		return true;
@@ -417,7 +393,6 @@ public class PcapUtil {
 				System.arraycopy(body, 0, temp, 0, body.length);
 				System.arraycopy(packs.get(i).body, 0, temp, body.length, packs.get(i).body.length);
 				body = temp;
-//				System.out.println("||||" + new String(body));
 			}
 		}
 		
@@ -445,7 +420,6 @@ public class PcapUtil {
 				
 				if (line.toLowerCase().startsWith("content-length:")) {
 					contentLen = Integer.valueOf(getHeaderValue(line, "content-length:"));
-//					System.out.println("===" + contentLen);
 				} else if (line.toLowerCase().startsWith("transfer-encoding")) {
 					transferEncoding = getHeaderValue(line, "transfer-encoding:");
 					if (transferEncoding != null && transferEncoding.equals("chunked")) {
@@ -480,19 +454,13 @@ public class PcapUtil {
 		}
 		
 		if (contentType != null && contentType.toLowerCase().startsWith("image")) {
-			
-			//TODO
-//			System.out.println("===image not support yet==");
 			sDataMap.put(sCurrentKey, readData(body));
 			return;
 		}
 		
-		//TODO gzip
-		
 		if (isChunked) {
 			try {
 				ByteArrayInputStream gzipInputStream = new ByteArrayInputStream(readChunkedData(body));
-//				System.out.println("==chunked response==" + );	//TODO
 				String content = unGzipBytesToString(gzipInputStream);
 				sDataMap.put(sCurrentKey, content.getBytes());
 			} catch (Exception e) {
@@ -712,7 +680,6 @@ public class PcapUtil {
 			byte[] ethernetHeader = new byte[14];
 			in.read(ethernetHeader);
 			short nProtocol = getShortFromByteBigEndian(ethernetHeader, 12);
-//			System.out.println(" " + seconds + " " + susecondes + " " + packageLen + " " + rawLen + " " + nProtocol);
 			
 			if (nProtocol != 2048) {
 				in.skip(packageLen - 14);
@@ -814,28 +781,16 @@ public class PcapUtil {
 			closeQuietly(sIn);
 		}
 		sIn = new FileInputStream(file);
-//		PushbackInputStream pio = new PushbackInputStream(in);
 		
 		byte[] globalHead = new byte[24];
 		if (sIn.available() >= 24) {
 			sIn.read(globalHead);
-//			pio.unread(globalHead);
 			byte[] magic = new byte[4];
 			System.arraycopy(globalHead, 0, magic, 0, 4);
 			int magicInt = (((magic[3] << 24) & 0xFF000000) | ((magic[2] << 16) & 0x00FF0000) | ((magic[1] << 8) & 0x0000FF00) | (magic[0] & 0x000000FF));
 			if (magicInt == PCAP_MAGIC_NUM) {
 				result.valid = true;
 			}
-			
-			System.out.println("==" + magicInt + " " + PCAP_MAGIC_NUM);
-			System.out.println("=1=" + ((PCAP_MAGIC_NUM & 0xFF000000) >> 24));
-			System.out.println("=1=" + ((PCAP_MAGIC_NUM & 0x00FF0000)));
-			System.out.println("=21=" + (((magic[3] << 24) & 0xFF000000) | (magic[2] << 16) & 0x00FF0000));
-			System.out.println("=2=" + ((magic[2] << 16) & 0x00FF0000));
-			magic[0] = (byte) 0x000000D4;
-			System.out.println(" " + magic[0] + " " + magic[1] + " " + magic[2] + " " + magic[3]);
-			System.out.println("byte " + globalHead);
-//			byte[] magicNumber = globalHead[0 : 4];
 			
 			
 		} else {
